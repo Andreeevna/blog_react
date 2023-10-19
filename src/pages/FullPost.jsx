@@ -9,7 +9,6 @@ import { Post } from '../components/Post'
 
 export const FullPost = () => {
 	const [data, setData] = useState()
-	console.log(data)
 	const [isLoading, setIsLoading] = useState(true)
 
 	const { id } = useParams()
@@ -35,7 +34,7 @@ export const FullPost = () => {
 			<Post
 				id={data._id}
 				title={data.title}
-				imageUrl={`http://localhost:4444${data.imageUrl}`}
+				imageUrl={data.imageUrl ? `http://localhost:4444${data.imageUrl}` : ''}
 				user={data.user}
 				createdAt={data.createdAt}
 				viewsCount={data.viewsCount}
