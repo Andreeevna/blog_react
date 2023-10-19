@@ -1,12 +1,12 @@
 import Button from '@mui/material/Button'
 import Paper from '@mui/material/Paper'
 import TextField from '@mui/material/TextField'
-import React from 'react'
+import React, { useEffect } from 'react'
 import SimpleMDE from 'react-simplemde-editor'
 
 import 'easymde/dist/easymde.min.css'
 import { useSelector } from 'react-redux'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import instance from '../../axios'
 import { selectIsAuth } from '../../redux/slices/authSlice'
 import styles from './AddPost.module.scss'
@@ -14,6 +14,8 @@ import styles from './AddPost.module.scss'
 export const AddPost = () => {
 	const navigate = useNavigate()
 	const isAuth = useSelector(selectIsAuth)
+	const { id } = useParams()
+	const isEditing = Boolean(id)
 
 	const [isLoading, setIsLoading] = React.useState(false)
 	const [text, setText] = React.useState('')
@@ -52,9 +54,10 @@ export const AddPost = () => {
 				tags,
 				imageUrl: imageUrl.url,
 			}
-			const { data } = await instance.post('/posts', fields)
-			console.log(data)
-			const _id = data._id
+			const { data } = isEditing
+				? await instance.patch(`/posts/${id}`, fields)
+				: await instance.post('/posts', fields)
+			const _id = isEditing ? id : data._id
 
 			navigate(`/posts/${_id}`)
 		} catch (err) {
@@ -62,6 +65,23 @@ export const AddPost = () => {
 			alert('Ошибка при создании статьи')
 		}
 	}
+
+	useEffect(() => {
+		if (id) {
+			instance
+				.get(`/posts/${id}`)
+				.then(({ data }) => {
+					setTitle(data.title)
+					setText(data.text)
+					setTags(data.tags.join(','))
+					setImageUrl(data.imageUrl)
+				})
+				.catch(err => {
+					console.log(err)
+					alert('Ошибка при получении статьи')
+				})
+		}
+	}, [])
 
 	const options = React.useMemo(
 		() => ({
@@ -108,7 +128,11 @@ export const AddPost = () => {
 					</Button>
 					<img
 						className={styles.image}
-						src={`http://localhost:4444${imageUrl.url}`}
+						src={
+							imageUrl?.url
+								? `http://localhost:4444${imageUrl.url}`
+								: `http://localhost:4444${imageUrl}`
+						}
 						alt='Uploaded'
 					/>
 				</>
@@ -140,7 +164,7 @@ export const AddPost = () => {
 			/>
 			<div className={styles.buttons}>
 				<Button onClick={onSubmit} size='large' variant='contained'>
-					Опубликовать
+					{isEditing ? 'Сохранить' : 'Опубликовать'}
 				</Button>
 				<a href='/'>
 					<Button size='large'>Отмена</Button>
